@@ -1,0 +1,12 @@
+# IT5022 - Fundamentals of Machine Learning Programming Assignment
+# Submission Information File
+
+1. Dataset Link:
+https://github.com/ginuka/IT5022_Fundamentals_of_Machine_Learning_Assignment/tree/main/dataset
+(Credit Risk Scoring Dataset, 8692 records, 19 attributes. Also backed up in repository dataset folder.)
+
+2. Public GitHub Repository Link:
+https://github.com/ginuka/IT5022_Fundamentals_of_Machine_Learning_Assignment.git
+
+3. YouTube Presentation / Demo Video Link:
+[Insert YouTube Video Link Here - 5 mins max per member]
