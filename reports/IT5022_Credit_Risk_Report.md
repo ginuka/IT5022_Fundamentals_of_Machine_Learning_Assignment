@@ -9,9 +9,8 @@
 **Academic Level:** Master of Science (MSc)  
 **Repository:** [https://github.com/ginuka/IT5022_Fundamentals_of_Machine_Learning_Assignment.git](https://github.com/ginuka/IT5022_Fundamentals_of_Machine_Learning_Assignment.git)  
 
-**Group Members:**
-* **Member 1:** Ginuka (Student ID: MS26922898) — [Email Address]
-* **Member 2:** [Team Member Name] (Student ID: [Student ID]) — [Email Address]
+**Author:** Ginuka (Student ID: MS26922898) — ms26922898@my.sliit.lk  
+**Submission Type:** Individual Submission  
 
 ---
 
@@ -258,21 +257,15 @@ Automated credit decision systems risk perpetuating historical socio-economic di
 
 ---
 
-## 7. Individual Member Contributions
+## 7. Author & Individual Project Contribution
 
-To strictly satisfy the marking rubric criterion (Item 8: Individual Contribution), work was divided between team members:
-
-### Member 1: Ginuka (MS26922898)
-* **Data Engineering:** Ingested raw Excel data, developed custom domain transformers, resolved missing monthly income via deterministic derivation, and engineered multi-label loan indicators.
-* **Supervised Learning (Model 1):** Implemented regularized Logistic Regression, executed 5-fold cross-validation, and developed decision threshold tuning curves.
-* **Evaluation Framework:** Authored `src/evaluation_helpers.py` to calculate MCC, PR-AUC, Brier score, and plot normalized confusion matrices.
-* **Report & Video:** Authored Executive Abstract, Preprocessing, Supervised Methodology, and Code Appendix; recorded Video Presentation Part A (5 minutes).
-
-### Member 2: [Team Member Name] ([Student ID])
-* **Exploratory Data Analysis:** Conducted formal statistical hypothesis testing (ANOVA F-tests, Chi-square independence tests), and generated correlation matrices.
-* **Supervised Learning (Model 2):** Implemented Random Forest ensemble, executed hyperparameter grid searches, and generated Gini feature importance rankings.
-* **Unsupervised Learning:** Formulated K-Means Elbow/Silhouette diagnostics, mapped de-scaled cluster persona profiles, and implemented DBSCAN anomaly detection.
-* **Report & Video:** Authored Introduction, Clustering, Critical Discussion, and Ethical AI chapters; recorded Video Presentation Part B (5 minutes).
+To satisfy the marking rubric criterion (Item 8: Individual Contribution), this project was conducted individually by **Ginuka (MS26922898)**, who executed all technical, empirical, and academic components end-to-end:
+* **Data Engineering & Audit:** Ingested the raw banking dataset, audited missingness mechanisms, engineered multi-label loan indicators, extracted numerical credit history years via regex, and resolved missing monthly income using deterministic domain logic ($\text{Monthly\_Income} = \text{Annual\_Income} / 12$).
+* **Statistical Hypothesis Testing:** Conducted ANOVA F-tests on continuous features ($F = 3,412.8, p < 10^{-100}$) and Chi-Square tests of independence on categorical predictors ($\chi^2 = 3,124.7, p < 10^{-200}$).
+* **Leakage-Safe Architecture:** Designed modular Scikit-Learn transformers (`CreditDomainFeatureEngineer` and `build_preprocessor`) strictly locking an 80/20 stratified split before transformer fitting.
+* **Supervised Learning Implementation:** Implemented, tuned, and evaluated both Model 1 (Regularized Logistic Regression with threshold moving) and Model 2 (Tuned Random Forest Ensemble with Gini feature importances) using 5-fold Stratified Cross-Validation.
+* **Unsupervised Clustering Discovery:** Formulated K-Means Elbow/Silhouette diagnostics ($K=3, s=0.2230$), de-scaled centroid persona profiles, and implemented DBSCAN density anomaly detection.
+* **Academic Reporting & Presentation:** Developed the comprehensive evaluation framework (`src/evaluation_helpers.py`), authored all chapters of this academic paper, formatted the source code appendix, and prepared the video demonstration.
 
 ---
 

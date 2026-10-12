@@ -8,7 +8,7 @@
 ---
 
 ## 📌 Project Overview
-This repository contains the complete implementation of the **IT5022: Fundamentals of Machine Learning** MSc group assignment. The project tackles a real-world financial risk problem: **automated credit risk evaluation and unlabelled customer segmentation** using a dataset of 8,692 retail banking customers across 19 financial and behavioral indicators.
+This repository contains the complete implementation of the **IT5022: Fundamentals of Machine Learning** MSc programming assignment. The project tackles a real-world financial risk problem: **automated credit risk evaluation and unlabelled customer segmentation** using a dataset of 8,692 retail banking customers across 19 financial and behavioral indicators.
 
 In accordance with the module rubric, we implement:
 - **Two Distinct Supervised Learning Algorithms:**
@@ -87,17 +87,14 @@ pip install -r requirements.txt
 
 ---
 
-## 👥 Group Contributions (Team Size: 2)
-* **Member 1 (Ginuka - MS26922898):**
-  - Data ingestion, regex feature engineering, domain imputation transformers.
-  - Model 1 implementation (Regularized Logistic Regression, threshold tuning).
-  - Evaluation metric implementations (PR-AUC, cost-sensitive confusion matrices).
-  - Methodology and Supervised Learning report chapters; video presentation Part A.
-* **Member 2:**
-  - Statistical testing (ANOVA F-test, $\chi^2$ independence), correlation heatmaps.
-  - Model 2 implementation (Random Forest ensemble, hyperparameter search, feature importances).
-  - Unsupervised clustering (K-Means silhouette analysis, DBSCAN density tuning).
-  - Critical discussion, ethical credit scoring review; video presentation Part B.
+## 👤 Author & Contribution (Individual Submission)
+* **Ginuka (Student ID: MS26922898 | Email: ms26922898@my.sliit.lk):**
+  - **Data Engineering:** Ingestion of raw dataset, domain-specific deterministic imputation ($\text{Monthly\_Income} = \text{Annual\_Income} / 12$), regex extraction of credit history years, and multi-label loan parsing.
+  - **Statistical Exploratory Audits:** Assessment of missing data mechanisms, IQR outlier boundaries, ANOVA F-tests, Chi-square independence tests, and correlation analysis.
+  - **Leakage-Safe Preprocessing Pipeline:** Construction of modular Scikit-Learn transformers and `ColumnTransformer` fitted strictly on training folds.
+  - **Supervised Classification:** Implementation and 5-fold cross-validation of Model 1 (Regularized Logistic Regression with threshold tuning) and Model 2 (Tuned Random Forest Ensemble with Gini feature importances).
+  - **Unsupervised Segmentation:** Execution of K-Means clustering with Elbow WCSS and Silhouette analysis ($K=3$), de-scaled centroid persona profiling, and DBSCAN density anomaly detection.
+  - **Evaluation & Reporting:** Construction of comprehensive metric evaluation framework (PR-AUC, ROC-AUC, MCC, Brier score, Confusion Matrices), final MSc academic report, and code appendix.
 
 ---
 
