@@ -13,6 +13,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder
+from sklearn.model_selection import train_test_split
 
 
 class CreditDomainFeatureEngineer(BaseEstimator, TransformerMixin):
@@ -173,3 +174,42 @@ def get_feature_lists(df_transformed):
         if c not in categorical_cols and c not in ['Credit_Score']
     ]
     return numeric_cols, categorical_cols
+
+
+def prepare_training_data(df, test_size=0.20, random_state=42):
+    """
+    Convenience loader to prepare train and test sets with zero data leakage:
+    1. Splits raw data into stratified Train (80%) and Test (20%) on Credit_Score.
+    2. Applies CreditDomainFeatureEngineer (sanitizing Age, outliers, placeholders).
+    3. Fits ColumnTransformer on train only, and transforms both train and test.
+
+    Returns:
+        X_train (np.ndarray): Scaled & encoded training feature matrix.
+        X_test (np.ndarray): Scaled & encoded testing feature matrix.
+        y_train (pd.Series): Binary target labels for train (1=Poor, 0=Good).
+        y_test (pd.Series): Binary target labels for test (1=Poor, 0=Good).
+        preprocessor (ColumnTransformer): Fitted preprocessor for future inference.
+        feature_names (list): List of all 39 post-encoded feature column names.
+    """
+    X = df.drop(columns=['Credit_Score'])
+    y = (df['Credit_Score'] == 'Poor').astype(int)
+
+    X_train_raw, X_test_raw, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state, stratify=y
+    )
+
+    engineer = CreditDomainFeatureEngineer()
+    X_train_eng = engineer.transform(X_train_raw)
+    X_test_eng = engineer.transform(X_test_raw)
+
+    num_cols, cat_cols = get_feature_lists(X_train_eng)
+    preprocessor = build_preprocessor(num_cols, cat_cols)
+
+    X_train = preprocessor.fit_transform(X_train_eng)
+    X_test = preprocessor.transform(X_test_eng)
+
+    cat_encoder = preprocessor.named_transformers_['cat'].named_steps['onehot']
+    cat_names = cat_encoder.get_feature_names_out(cat_cols).tolist()
+    feature_names = num_cols + cat_names
+
+    return X_train, X_test, y_train, y_test, preprocessor, feature_names
