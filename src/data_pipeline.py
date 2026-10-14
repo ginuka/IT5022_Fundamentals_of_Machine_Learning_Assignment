@@ -30,9 +30,12 @@ class CreditDomainFeatureEngineer(BaseEstimator, TransformerMixin):
     7. Maps ordinal Credit_Mix ('Bad' -> 0, 'Standard' -> 1, 'Good' -> 2).
     8. Drops uninformative identifier features (Customer_ID) and redundant raw text features.
     """
-    def __init__(self, drop_identifiers=True, sanitize_anomalies=True):
+    def __init__(self, drop_identifiers=True, sanitize_anomalies=True,
+                 drop_collinear=True, drop_uninformative=True):
         self.drop_identifiers = drop_identifiers
         self.sanitize_anomalies = sanitize_anomalies
+        self.drop_collinear = drop_collinear
+        self.drop_uninformative = drop_uninformative
 
     def fit(self, X, y=None):
         return self
@@ -123,13 +126,29 @@ class CreditDomainFeatureEngineer(BaseEstimator, TransformerMixin):
             X['Credit_Mix_Ordinal'] = X['Credit_Mix'].map(credit_mix_map).fillna(1).astype(int)
             X.drop(columns=['Credit_Mix'], inplace=True)
 
-        # 6. Drop uninformative / identifier features
+        # 6. Drop uninformative / identifier / collinear features
         cols_to_drop = []
         if self.drop_identifiers and 'Customer_ID' in X.columns:
             cols_to_drop.append('Customer_ID')
-        # Num_Credit_Inquiries has >99% missing data
+        # Num_Credit_Inquiries has >99% missing data (8,634 out of 8,692 rows missing)
         if 'Num_Credit_Inquiries' in X.columns:
             cols_to_drop.append('Num_Credit_Inquiries')
+
+        # Collinear / Redundant features:
+        # - Monthly_Income is derived from Annual_Income / 12 (correlation r = 0.9865).
+        # - Derived_Loan_Count is 100% duplicate with Num_of_Loan (correlation r = 1.0000).
+        if self.drop_collinear:
+            if 'Monthly_Income' in X.columns:
+                cols_to_drop.append('Monthly_Income')
+            if 'Derived_Loan_Count' in X.columns:
+                cols_to_drop.append('Derived_Loan_Count')
+
+        # Statistically insignificant categorical features:
+        # - Occupation showed Chi-square independence p = 0.3468 (>> 0.05).
+        #   Pruning it eliminates 16 noisy one-hot dimensions (reducing curse of dimensionality).
+        if self.drop_uninformative:
+            if 'Occupation' in X.columns:
+                cols_to_drop.append('Occupation')
 
         if cols_to_drop:
             X.drop(columns=cols_to_drop, inplace=True, errors='ignore')
@@ -176,11 +195,13 @@ def get_feature_lists(df_transformed):
     return numeric_cols, categorical_cols
 
 
-def prepare_training_data(df, test_size=0.20, random_state=42):
+def prepare_training_data(df, test_size=0.20, random_state=42,
+                          drop_collinear=True, drop_uninformative=True):
     """
     Convenience loader to prepare train and test sets with zero data leakage:
     1. Splits raw data into stratified Train (80%) and Test (20%) on Credit_Score.
-    2. Applies CreditDomainFeatureEngineer (sanitizing Age, outliers, placeholders).
+    2. Applies CreditDomainFeatureEngineer (sanitizing Age, outliers, placeholders,
+       and optionally pruning collinear & uninformative features).
     3. Fits ColumnTransformer on train only, and transforms both train and test.
 
     Returns:
@@ -189,7 +210,7 @@ def prepare_training_data(df, test_size=0.20, random_state=42):
         y_train (pd.Series): Binary target labels for train (1=Poor, 0=Good).
         y_test (pd.Series): Binary target labels for test (1=Poor, 0=Good).
         preprocessor (ColumnTransformer): Fitted preprocessor for future inference.
-        feature_names (list): List of all 39 post-encoded feature column names.
+        feature_names (list): List of all post-encoded feature column names.
     """
     X = df.drop(columns=['Credit_Score'])
     y = (df['Credit_Score'] == 'Poor').astype(int)
@@ -198,7 +219,11 @@ def prepare_training_data(df, test_size=0.20, random_state=42):
         X, y, test_size=test_size, random_state=random_state, stratify=y
     )
 
-    engineer = CreditDomainFeatureEngineer()
+    engineer = CreditDomainFeatureEngineer(
+        drop_identifiers=True,
+        drop_collinear=drop_collinear,
+        drop_uninformative=drop_uninformative
+    )
     X_train_eng = engineer.transform(X_train_raw)
     X_test_eng = engineer.transform(X_test_raw)
 
@@ -208,8 +233,11 @@ def prepare_training_data(df, test_size=0.20, random_state=42):
     X_train = preprocessor.fit_transform(X_train_eng)
     X_test = preprocessor.transform(X_test_eng)
 
-    cat_encoder = preprocessor.named_transformers_['cat'].named_steps['onehot']
-    cat_names = cat_encoder.get_feature_names_out(cat_cols).tolist()
+    if cat_cols and 'cat' in preprocessor.named_transformers_:
+        cat_encoder = preprocessor.named_transformers_['cat'].named_steps['onehot']
+        cat_names = cat_encoder.get_feature_names_out(cat_cols).tolist()
+    else:
+        cat_names = []
     feature_names = num_cols + cat_names
 
     return X_train, X_test, y_train, y_test, preprocessor, feature_names
