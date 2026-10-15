@@ -12,23 +12,37 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.model_selection import train_test_split
+
+
+VALID_RANGES = {
+    'Age': (18, 100),
+    'Num_Bank_Accounts': (0, 20),
+    'Num_Credit_Card': (0, 20),
+    'Interest_Rate': (0, 50),
+    'Num_of_Loan': (0, 20),
+    'Num_of_Delayed_Payment': (0, 50),
+    'Annual_Income': (0, 500000),
+    'Monthly_Income': (0, 45000)
+}
 
 
 class CreditDomainFeatureEngineer(BaseEstimator, TransformerMixin):
     """
-    Domain-specific feature engineering & synthetic noise sanitization transformer:
-    1. Sanitizes artificial / corrupted numerical noise (Age, Interest_Rate, Bank Accounts,
-       Credit Cards, Loans, Delayed Payments, Annual Income, Sentinel Investment values).
-    2. Cleans corrupted placeholder strings in nominal categories ('_______' in Occupation,
-       '!@9#%8' in Payment_Behaviour).
-    3. Derives missing Monthly_Income using sanitized Annual_Income / 12 (and vice versa).
-    4. Extracts numerical integer years from 'Credit_History_Age' string.
-    5. Parses multi-valued 'Type_of_Loan' into loan count and specific high-risk loan flags.
-    6. Encodes binary flags (Payment_of_Min_Amount).
-    7. Maps ordinal Credit_Mix ('Bad' -> 0, 'Standard' -> 1, 'Good' -> 2).
-    8. Drops uninformative identifier features (Customer_ID) and redundant raw text features.
+    Domain-specific feature engineering & noise sanitization transformer:
+    1. Sanitizes impossible / corrupted numerical values (Age, Interest_Rate, Accounts,
+       Credit Cards, Loans, Delayed Payments, Annual & Monthly Income).
+    2. Maps sentinel investment placeholders (10,000) and corrupted category strings
+       ('_______' in Occupation, '!@9#%8' in Payment_Behaviour, '_' in Credit_Mix, 'NM' in
+       Payment_of_Min_Amount) to NaN for clean downstream statistical imputation.
+    3. Extracts numerical integer years from 'Credit_History_Age' string.
+    4. Parses multi-valued 'Type_of_Loan' into loan count and specific loan indicator flags.
+       Note: 'Has_Mortgage' strictly targets mortgage facilities, differentiating from home-equity loans.
+    5. Maps binary flags (Payment_of_Min_Amount) and ordinal Credit_Mix ('Bad' -> 0, 'Standard' -> 1, 'Good' -> 2).
+    6. Drops uninformative identifier features (Customer_ID) and redundant raw text features.
+    7. Optionally eliminates collinear (Monthly_Income, Derived_Loan_Count) and statistically
+       independent uninformative features (Occupation) for dimensionality reduction.
     """
     def __init__(self, drop_identifiers=True, sanitize_anomalies=True,
                  drop_collinear=True, drop_uninformative=True):
@@ -43,50 +57,28 @@ class CreditDomainFeatureEngineer(BaseEstimator, TransformerMixin):
     def transform(self, X):
         X = X.copy()
 
-        # 0. Sanitize Synthetic Corruptions & Outliers
+        # 0. Sanitize Synthetic Corruptions & Sentinel Outliers
         if self.sanitize_anomalies:
-            # Age: legitimate borrowing age range [18, 100]. Corrupted/impossible ages converted to NaN.
-            if 'Age' in X.columns:
-                X.loc[(X['Age'] < 18) | (X['Age'] > 100), 'Age'] = np.nan
-
-            # Annual_Income & Monthly_Income: filter impossible extreme multipliers (>500,000)
-            if 'Annual_Income' in X.columns:
-                X.loc[(X['Annual_Income'] <= 0) | (X['Annual_Income'] > 500000), 'Annual_Income'] = np.nan
-            if 'Monthly_Income' in X.columns:
-                X.loc[(X['Monthly_Income'] <= 0) | (X['Monthly_Income'] > 45000), 'Monthly_Income'] = np.nan
-
-            # Interest_Rate: banking rates should realistically lie within [0%, 100%]
-            if 'Interest_Rate' in X.columns:
-                X.loc[(X['Interest_Rate'] < 0) | (X['Interest_Rate'] > 100), 'Interest_Rate'] = np.nan
-
-            # Accounts, Cards, and Loans: filter negative counts and impossible 3-to-4 digit anomalies
-            if 'Num_Bank_Accounts' in X.columns:
-                X.loc[(X['Num_Bank_Accounts'] < 0) | (X['Num_Bank_Accounts'] > 20), 'Num_Bank_Accounts'] = np.nan
-            if 'Num_Credit_Card' in X.columns:
-                X.loc[(X['Num_Credit_Card'] < 0) | (X['Num_Credit_Card'] > 20), 'Num_Credit_Card'] = np.nan
-            if 'Num_of_Loan' in X.columns:
-                X.loc[(X['Num_of_Loan'] < 0) | (X['Num_of_Loan'] > 25), 'Num_of_Loan'] = np.nan
-            if 'Num_of_Delayed_Payment' in X.columns:
-                X.loc[(X['Num_of_Delayed_Payment'] < 0) | (X['Num_of_Delayed_Payment'] > 50), 'Num_of_Delayed_Payment'] = np.nan
+            # Numerical range boundaries: values outside legitimate banking limits converted to NaN
+            for col, (lo, hi) in VALID_RANGES.items():
+                if col in X.columns:
+                    X.loc[(X[col] < lo) | (X[col] > hi), col] = np.nan
 
             # Amount_invested_monthly: 10,000 is an artificial sentinel placeholder
             if 'Amount_invested_monthly' in X.columns:
                 X.loc[X['Amount_invested_monthly'] >= 10000, 'Amount_invested_monthly'] = np.nan
 
-            # Categorical placeholder strings: replace with 'Unknown'
+            # Categorical placeholder strings: replace with NaN for clean downstream imputation
             if 'Occupation' in X.columns:
-                X['Occupation'] = X['Occupation'].replace({'_______': 'Unknown'})
+                X['Occupation'] = X['Occupation'].replace({'_______': np.nan})
             if 'Payment_Behaviour' in X.columns:
-                X['Payment_Behaviour'] = X['Payment_Behaviour'].replace({'!@9#%8': 'Unknown'})
+                X['Payment_Behaviour'] = X['Payment_Behaviour'].replace({'!@9#%8': np.nan})
+            if 'Credit_Mix' in X.columns:
+                X['Credit_Mix'] = X['Credit_Mix'].replace({'_': np.nan})
+            if 'Payment_of_Min_Amount' in X.columns:
+                X['Payment_of_Min_Amount'] = X['Payment_of_Min_Amount'].replace({'NM': np.nan})
 
-        # 1. Domain Imputation: Monthly_Income from Annual_Income / 12 (bidirectional)
-        if 'Monthly_Income' in X.columns and 'Annual_Income' in X.columns:
-            missing_monthly = X['Monthly_Income'].isnull()
-            X.loc[missing_monthly, 'Monthly_Income'] = X.loc[missing_monthly, 'Annual_Income'] / 12.0
-            missing_annual = X['Annual_Income'].isnull()
-            X.loc[missing_annual, 'Annual_Income'] = X.loc[missing_annual, 'Monthly_Income'] * 12.0
-
-        # 2. Extract Numerical Years from Credit_History_Age (e.g. "16 Years")
+        # 1. Extract Numerical Years from Credit_History_Age (e.g. "16 Years")
         if 'Credit_History_Age' in X.columns:
             def extract_years(val):
                 if pd.isna(val):
@@ -97,7 +89,7 @@ class CreditDomainFeatureEngineer(BaseEstimator, TransformerMixin):
             X['Credit_History_Years'] = X['Credit_History_Age'].apply(extract_years)
             X.drop(columns=['Credit_History_Age'], inplace=True)
 
-        # 3. Parse Type_of_Loan (multi-valued comma-separated string)
+        # 2. Parse Type_of_Loan (multi-valued comma-separated string)
         if 'Type_of_Loan' in X.columns:
             def parse_loans(val):
                 if pd.isna(val):
@@ -105,7 +97,8 @@ class CreditDomainFeatureEngineer(BaseEstimator, TransformerMixin):
                 val_str = str(val).lower()
                 num_loans = len([item for item in val_str.split(',') if item.strip()])
                 has_payday = 1 if 'payday' in val_str else 0
-                has_mortgage = 1 if 'mortgage' in val_str or 'home' in val_str else 0
+                # Match mortgage loans strictly (avoid conflating with home-equity loans)
+                has_mortgage = 1 if 'mortgage' in val_str else 0
                 return num_loans, has_payday, has_mortgage
 
             parsed = X['Type_of_Loan'].apply(parse_loans)
@@ -114,19 +107,18 @@ class CreditDomainFeatureEngineer(BaseEstimator, TransformerMixin):
             X['Has_Mortgage'] = [p[2] for p in parsed]
             X.drop(columns=['Type_of_Loan'], inplace=True)
 
-        # 4. Binary mapping for Payment_of_Min_Amount
+        # 3. Binary mapping for Payment_of_Min_Amount
         if 'Payment_of_Min_Amount' in X.columns:
-            X['Payment_of_Min_Amount'] = X['Payment_of_Min_Amount'].map({
-                'Yes': 1, 'No': 0, 'NM': 0
-            }).fillna(0).astype(int)
+            min_map = {'Yes': 1.0, 'No': 0.0}
+            X['Payment_of_Min_Amount'] = X['Payment_of_Min_Amount'].map(min_map)
 
-        # 5. Ordinal mapping for Credit_Mix
+        # 4. Ordinal mapping for Credit_Mix
         if 'Credit_Mix' in X.columns:
-            credit_mix_map = {'Bad': 0, 'Standard': 1, 'Good': 2, '_': 1}
-            X['Credit_Mix_Ordinal'] = X['Credit_Mix'].map(credit_mix_map).fillna(1).astype(int)
+            credit_mix_map = {'Bad': 0.0, 'Standard': 1.0, 'Good': 2.0}
+            X['Credit_Mix_Ordinal'] = X['Credit_Mix'].map(credit_mix_map)
             X.drop(columns=['Credit_Mix'], inplace=True)
 
-        # 6. Drop uninformative / identifier / collinear features
+        # 5. Drop uninformative / identifier / collinear features
         cols_to_drop = []
         if self.drop_identifiers and 'Customer_ID' in X.columns:
             cols_to_drop.append('Customer_ID')
@@ -135,8 +127,8 @@ class CreditDomainFeatureEngineer(BaseEstimator, TransformerMixin):
             cols_to_drop.append('Num_Credit_Inquiries')
 
         # Collinear / Redundant features:
-        # - Monthly_Income is derived from Annual_Income / 12 (correlation r = 0.9865).
-        # - Derived_Loan_Count is 100% duplicate with Num_of_Loan (correlation r = 1.0000).
+        # - Monthly_Income is strongly correlated with Annual_Income (r > 0.93)
+        # - Derived_Loan_Count is duplicate with Num_of_Loan (r = 1.0000)
         if self.drop_collinear:
             if 'Monthly_Income' in X.columns:
                 cols_to_drop.append('Monthly_Income')
@@ -144,8 +136,8 @@ class CreditDomainFeatureEngineer(BaseEstimator, TransformerMixin):
                 cols_to_drop.append('Derived_Loan_Count')
 
         # Statistically insignificant categorical features:
-        # - Occupation showed Chi-square independence p = 0.3468 (>> 0.05).
-        #   Pruning it eliminates 16 noisy one-hot dimensions (reducing curse of dimensionality).
+        # - Occupation showed Chi-square independence (p > 0.05).
+        #   Pruning it eliminates noisy one-hot dimensions (reducing curse of dimensionality).
         if self.drop_uninformative:
             if 'Occupation' in X.columns:
                 cols_to_drop.append('Occupation')
@@ -195,13 +187,41 @@ def get_feature_lists(df_transformed):
     return numeric_cols, categorical_cols
 
 
+def build_full_pipeline(clf, drop_collinear=True, drop_uninformative=True):
+    """
+    Constructs a complete end-to-end Pipeline incorporating feature engineering,
+    leakage-free imputation, standardisation/encoding, and the classifier.
+    Ideal for GridSearchCV to ensure zero fold contamination.
+    """
+    engineer = CreditDomainFeatureEngineer(
+        drop_identifiers=True,
+        drop_collinear=drop_collinear,
+        drop_uninformative=drop_uninformative
+    )
+    # Standard output feature schema
+    num_cols = [
+        'Age', 'Annual_Income', 'Num_Bank_Accounts', 'Num_Credit_Card',
+        'Interest_Rate', 'Num_of_Loan', 'Delay_from_due_date',
+        'Num_of_Delayed_Payment', 'Payment_of_Min_Amount',
+        'Amount_invested_monthly', 'Credit_History_Years',
+        'Has_Payday_Loan', 'Has_Mortgage', 'Credit_Mix_Ordinal'
+    ]
+    cat_cols = ['Payment_Behaviour']
+    prep = build_preprocessor(num_cols, cat_cols)
+
+    return Pipeline([
+        ('engineer', engineer),
+        ('prep', prep),
+        ('clf', clf)
+    ])
+
+
 def prepare_training_data(df, test_size=0.20, random_state=42,
                           drop_collinear=True, drop_uninformative=True):
     """
     Convenience loader to prepare train and test sets with zero data leakage:
     1. Splits raw data into stratified Train (80%) and Test (20%) on Credit_Score.
-    2. Applies CreditDomainFeatureEngineer (sanitizing Age, outliers, placeholders,
-       and optionally pruning collinear & uninformative features).
+    2. Applies CreditDomainFeatureEngineer (sanitizing outliers and sentinels).
     3. Fits ColumnTransformer on train only, and transforms both train and test.
 
     Returns:

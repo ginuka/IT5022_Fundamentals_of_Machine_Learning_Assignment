@@ -1,12 +1,17 @@
 # IT5022 - Fundamentals of Machine Learning Programming Assignment
-# Submission Information File
+# Official Submission Information File
 
-1. Dataset Link:
-https://github.com/ginuka/IT5022_Fundamentals_of_Machine_Learning_Assignment/tree/main/dataset
-(Credit Risk Scoring Dataset, 8692 records, 19 attributes. Also backed up in repository dataset folder.)
+1. Primary Public Dataset Source & Provenance:
+- Source Name: Credit Score Classification Dataset
+- Original Author / Host: Rohan Paris (Kaggle)
+- Original Dataset URL: https://www.kaggle.com/datasets/parisrohan/credit-score-classification
+- License: CC0: Public Domain
+- Dataset Derivation: The original Kaggle benchmark contains 100,000 multi-month records with a 3-class target ('Good', 'Standard', 'Poor'). To formulate a real-world binary credit risk default problem, the benchmark was deduplicated to one record per unique customer (8,692 instances across 19 attributes) focusing on binary credit health ('Poor' default risk vs 'Good' creditworthy).
+- Project Repository Backup Link: https://github.com/ginuka/IT5022_Fundamentals_of_Machine_Learning_Assignment/tree/main/dataset
 
 2. Public GitHub Repository Link:
 https://github.com/ginuka/IT5022_Fundamentals_of_Machine_Learning_Assignment.git
 
 3. YouTube Presentation / Demo Video Link:
-[Insert YouTube Video Link Here - 5 mins max per member]
+[Insert YouTube Video Link Here - Maximum 5 minutes]
+(Presentation covers: Project architecture, data sanitization, supervised model benchmarking, unsupervised persona segmentation, and critical discussion)

@@ -1,7 +1,10 @@
 # IT5022 - Fundamentals of Machine Learning
-# Group Members Details (Team Size: 1)
+# Student Details & Submission Governance
 
-Member 1:
+Submission Type: Individual Submission 
+Team Size: 1
+
+Author / Member Details:
 Name: Ginuka
 Student ID: MS26922898
 Email: ms26922898@my.sliit.lk
