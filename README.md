@@ -1,5 +1,5 @@
 # IT5022 — Fundamentals of Machine Learning Programming Assignment
-## Real-World Credit Risk Scoring & Customer Financial Segmentation
+## Real-World Credit Risk Scoring via Supervised Machine Learning
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.4%2B-orange.svg)](https://scikit-learn.org/)
@@ -8,15 +8,12 @@
 ---
 
 ## 📌 Project Overview
-This repository contains the complete implementation of the **IT5022: Fundamentals of Machine Learning** MSc programming assignment. The project tackles a critical financial risk problem: **automated credit risk evaluation and unlabelled customer segmentation** using a dataset of 8,692 retail banking customers across 19 financial and behavioral indicators.
+This repository contains the complete implementation of the **IT5022: Fundamentals of Machine Learning** MSc programming assignment. The project tackles a critical financial risk problem: **automated credit risk evaluation and loan default prediction** using a dataset of 8,692 retail banking customers across 19 financial, behavioral, and historical indicators.
 
 In accordance with the module rubric, we implement:
 - **Two Distinct Supervised Learning Algorithms:**
   1. *Parametric Baseline:* Regularized Logistic Regression (evaluating L1 and L2 penalties, out-of-fold decision-threshold tuning via `cross_val_predict`, PR curves, and probability calibration).
   2. *Non-linear Ensemble:* Random Forest Classifier (GridSearchCV 5-fold cross-validation, Gini impurity reduction feature importance, generalization gap and overfitting diagnostics).
-- **Two Distinct Unsupervised Learning / Clustering Algorithms:**
-  1. *Centroid-based Partitioning:* K-Means Clustering with Within-Cluster Sum of Squares (Inertia/Elbow method), Silhouette analysis, and de-scaled centroid persona profiling.
-  2. *Density-based Spatial Clustering:* DBSCAN with $k$-distance $\epsilon$ optimization for financial anomaly/noise detection and dense risk cluster identification.
 
 ---
 
@@ -31,8 +28,7 @@ IT5022_Fundamentals_of_Machine_Learning_Assignment/
 ├── notebooks/
 │   ├── 01_eda_and_data_audit.ipynb                  # Statistical EDA, Distributions, ANOVA & Chi-Square tests
 │   ├── 02_preprocessing_and_feature_engineering.ipynb # Leakage-safe pipeline, custom transformers, scalers
-│   ├── 03_supervised_learning_classification.ipynb   # Logistic Regression vs Random Forest, PR-AUC, ROC-AUC
-│   └── 04_unsupervised_learning_clustering.ipynb     # K-Means & DBSCAN clustering, Silhouette, Persona profiling
+│   └── 03_supervised_learning_classification.ipynb   # Logistic Regression vs Random Forest, PR-AUC, ROC-AUC
 │
 ├── src/
 │   ├── __init__.py
@@ -88,14 +84,8 @@ pip install -r requirements.txt
    - **Dimensionality Reduction (Rubric Criterion 3):** Pruned extreme collinear feature `Monthly_Income` ($r > 0.93$), duplicate `Derived_Loan_Count` ($r = 1.0000$), and statistically independent feature `Occupation` ($\chi^2 = 16.54, p = 0.347 \gg 0.05$), reducing the feature matrix to 20 clean, standardized dimensions.
 2. **Supervised Classification Benchmark:**
    - Evaluated under moderate class imbalance (59.65% Poor vs 40.35% Good).
-   - Tuned decision thresholds on out-of-fold training probabilities via `cross_val_predict` ($t = 0.44$), increasing Recall to **85.82%** to minimize high-cost default write-offs.
+   - Tuned decision thresholds on out-of-fold training probabilities via `cross_val_predict` ($t = 0.44$), increasing Recall to **85.82%** (capturing 50 additional defaulting borrowers) to minimize high-cost default write-offs.
    - Tuned Random Forest achieved superior performance across all dimensions: **Accuracy 82.12%**, **F1 0.8449**, **MCC 0.6364**, **ROC-AUC 0.8948**, and **PR-AUC 0.9267**, with a tight generalization gap (89.69% train vs 82.12% test) demonstrating effective tree regularization.
-3. **Unsupervised Customer Personas:**
-   - K-Means ($K = 3$) uncovered natural financial segments:
-     - **Cluster 0: Chronic Overleveraged Defaulters ($n=2,952$):** High interest rates ($24.6\%$), chronic payment delays ($38.3$ days), capturing **95.60% Poor credit instances** without labels.
-     - **Cluster 1: Prime Low-Risk Borrowers ($n=3,511$):** High income ($71.8\text{k}$), low interest ($6.8\%$), capturing **72.66% Good credit instances**.
-     - **Cluster 2: Moderate-Income Mid-Tier Borrowers ($n=2,229$):** Balanced credit usage ($62.94\%$ Poor credit).
-   - DBSCAN ($\epsilon = 2.5, \text{min\_samples} = 15$) isolated 301 records (3.46%) as multi-dimensional anomaly noise.
 
 ---
 
@@ -105,5 +95,4 @@ pip install -r requirements.txt
   - **Statistical Exploratory Audits:** Comparative ANOVA F-tests, Chi-square independence tests, and correlation analysis.
   - **Leakage-Safe Preprocessing Pipeline:** Construction of modular Scikit-Learn transformers and `ColumnTransformer` fitted strictly on training folds.
   - **Supervised Classification:** Implementation and 5-fold cross-validation of Model 1 (Regularized Logistic Regression with out-of-fold threshold tuning) and Model 2 (Tuned Random Forest Ensemble with Gini feature importances).
-  - **Unsupervised Segmentation:** Execution of K-Means clustering with Elbow WCSS and Silhouette analysis ($K=3$), de-scaled centroid persona profiling, and DBSCAN density anomaly detection.
   - **Evaluation & Reporting:** Construction of comprehensive metric evaluation framework (PR-AUC, ROC-AUC, MCC, Brier score, Confusion Matrices), final MSc academic report PDF, and code appendix.

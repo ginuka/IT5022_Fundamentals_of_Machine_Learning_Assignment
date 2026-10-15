@@ -1,6 +1,6 @@
 # MSc In Information Technology — Fundamentals of Machine Learning (IT5022)
 ## Final Academic Project Report
-### Project Title: Real-World Credit Risk Scoring & Customer Financial Segmentation
+### Project Title: Real-World Credit Risk Scoring via Supervised Machine Learning
 
 ---
 
@@ -15,11 +15,9 @@
 ---
 
 ## Executive Abstract
-Credit scoring and risk-adjusted lending are fundamental pillars of modern financial technology. Commercial banks and fintech institutions must accurately distinguish creditworthy applicants from high-risk borrowers while discovering natural behavioral segments within unlabelled customer bases. In this investigation, we conduct an end-to-end machine learning study using a retail banking dataset comprising 8,692 customer instances characterized by 19 financial, behavioral, and historical attributes.
+Credit scoring and risk-adjusted lending are fundamental pillars of modern financial technology. Commercial banks and fintech institutions must accurately distinguish creditworthy applicants from high-risk borrowers to safeguard capital while sustaining lending volume. In this investigation, we conduct an end-to-end supervised machine learning study using a retail banking dataset comprising 8,692 customer instances characterized by 19 financial, behavioral, and historical attributes.
 
-Under the supervised learning track, we evaluate two distinct learning paradigms: a parametric, regularized Logistic Regression classifier with out-of-fold decision-threshold moving, and a non-linear Random Forest ensemble utilizing bootstrap aggregation and random feature subspace sampling. Addressing synthetic artifact corruptions and sentinel placeholders (e.g., impossible ages, 5,774% interest rates) via a custom `InvalidValueCleaner` transformer and leakage-safe preprocessing pipeline, we reduced the feature space to 20 high-signal dimensions. Under rigorous 5-fold stratified cross-validation on an independent 20% holdout test partition (n=1,739), Random Forest achieved superior performance across all evaluation dimensions, yielding an Accuracy of **82.12%**, an F1-Score of **0.8449**, a Matthews Correlation Coefficient (MCC) of **0.6364**, an ROC-AUC of **0.8948**, a PR-AUC of **0.9267**, and a Brier Calibration Score of **0.1258**. Tuned Logistic Regression (threshold = 0.44) achieved an Accuracy of **80.16%** and an F1-Score of **0.8376**, boosting recall from 81.00% to **85.82%** to catch 50 additional defaulting borrowers.
-
-Under the unsupervised clustering track, we deploy K-Means centroid-based partitioning and DBSCAN density-based clustering on the unlabelled feature space. Using Within-Cluster Sum of Squares (WCSS) and Silhouette analysis, we discover three natural financial personas: *High-Risk Chronic Overleveraged Borrowers* (n=2,952, which captures **95.60%** actual poor credit instances without supervision), *Prime Low-Risk Borrowers* (n=3,511, **72.66%** good credit), and *Moderate-Income Mid-Tier Borrowers* (n=2,229). DBSCAN successfully isolates 301 records (3.46%) as multi-dimensional anomalous noise. Finally, we provide a critical academic discussion covering algorithmic trade-offs, overfitting diagnostics, ethical considerations regarding automated discrimination, data limitations, and prospective avenues for semi-supervised expansion.
+Under the supervised learning track, we evaluate two distinct learning paradigms: a parametric, regularized Logistic Regression classifier with out-of-fold decision-threshold moving, and a non-linear Random Forest ensemble utilizing bootstrap aggregation and random feature subspace sampling. Addressing synthetic artifact corruptions and sentinel placeholders (e.g., impossible ages, 5,774% interest rates) via a custom `InvalidValueCleaner` transformer and leakage-safe preprocessing pipeline, we reduced the feature space to 20 high-signal dimensions. Under rigorous 5-fold stratified cross-validation on an independent 20% holdout test partition (n=1,739), Random Forest achieved superior performance across all evaluation dimensions, yielding an Accuracy of **82.12%**, an F1-Score of **0.8449**, a Matthews Correlation Coefficient (MCC) of **0.6364**, an ROC-AUC of **0.8948**, a PR-AUC of **0.9267**, and a Brier Calibration Score of **0.1258**. Tuned Logistic Regression (threshold t = 0.44) achieved an Accuracy of **80.16%** and an F1-Score of **0.8376**, boosting recall from 81.00% to **85.82%** to catch 50 additional defaulting borrowers. Finally, we provide a critical academic discussion covering algorithmic trade-offs, overfitting diagnostics (generalization gap = 7.57%), ethical considerations regarding automated discrimination, data limitations, and prospective avenues for cost-sensitive gradient boosting.
 
 ---
 
@@ -28,12 +26,11 @@ Under the unsupervised clustering track, we deploy K-Means centroid-based partit
 2. [Dataset Provenance, Description & Statistical Audit](#2-dataset-provenance-description--statistical-audit)
 3. [Leakage-Safe Preprocessing & Feature Engineering](#3-leakage-safe-preprocessing--feature-engineering)
 4. [Supervised Learning Methodology & Experimental Results](#4-supervised-learning-methodology--experimental-results)
-5. [Unsupervised Learning Methodology & Customer Segmentation](#5-unsupervised-learning-methodology--customer-segmentation)
-6. [Critical Analysis, Limitations & Ethical Discussion](#6-critical-analysis-limitations--ethical-discussion)
-7. [Author & Individual Project Contribution](#7-author--individual-project-contribution)
-8. [Conclusion & Future Work](#8-conclusion--future-work)
-9. [References](#9-references)
-10. [Appendix: Complete Source Code](#10-appendix-complete-source-code)
+5. [Critical Analysis, Limitations & Ethical Discussion](#5-critical-analysis-limitations--ethical-discussion)
+6. [Author & Individual Project Contribution](#6-author--individual-project-contribution)
+7. [Conclusion & Future Work](#7-conclusion--future-work)
+8. [References](#8-references)
+9. [Appendix: Complete Source Code](#9-appendix-complete-source-code)
 
 ---
 
@@ -43,15 +40,15 @@ Under the unsupervised clustering track, we deploy K-Means centroid-based partit
 Commercial lending decisions inherently balance the pursuit of interest revenue against default hazard. Traditional credit scoring systems relied heavily on manual underwriting or rigid, heuristic scorecards. In modern high-volume fintech and digital banking environments, automated Machine Learning (ML) pipelines are indispensable for evaluating applicant creditworthiness at scale.
 
 ### 1.2 Learning Objectives
-To address this dual imperative, this project is divided into two distinct machine learning paradigms:
-1. **Supervised Learning (Classification):** Accurately predicting the binary credit health status (`Credit_Score`: `Poor` vs `Good`) to minimize high-cost default risks (False Negatives) while preserving loan volume.
-2. **Unsupervised Learning (Clustering):** Discovering natural behavioral customer risk segments without ground-truth labels, enabling targeted credit line limits and tailored interest rate structures.
+To address this imperative, this project focuses strictly on **Supervised Machine Learning for Binary Classification**:
+- Accurately predicting the binary credit health status (`Credit_Score`: `Poor` vs `Good`) to minimize high-cost default risks (False Negatives) while preserving loan volume.
+- Comparing a parametric linear model against an ensemble tree architecture.
+- Optimizing classification decision thresholds to balance business precision and recall trade-offs.
 
 ### 1.3 Methodological Constraints & Governance
 In accordance with course guidelines:
 - Strictly non-Deep Learning models are employed.
 - Two distinct supervised algorithms (parametric linear vs non-linear tree ensemble) are evaluated.
-- Two distinct unsupervised algorithms (centroid partitioning vs density-based clustering) are implemented.
 - Complete data leakage prevention is enforced throughout cross-validation.
 - Project conducted as an authorized individual submission for IT5022.
 
@@ -169,7 +166,7 @@ In `src/data_pipeline.py`, the `CreditDomainFeatureEngineer` executes:
 The resulting feature matrix contains **20 clean, standardized dimensions**:
 - **14 Continuous/Ordinal Features:** `Age`, `Annual_Income`, `Num_Bank_Accounts`, `Num_Credit_Card`, `Interest_Rate`, `Num_of_Loan`, `Delay_from_due_date`, `Num_of_Delayed_Payment`, `Payment_of_Min_Amount`, `Amount_invested_monthly`, `Credit_History_Years`, `Has_Payday_Loan`, `Has_Mortgage`, `Credit_Mix_Ordinal`.
 - **6 One-Hot Categorical Features:** `Payment_Behaviour` (6 clean spend/value dummy categories, with placeholder noise eliminated).
-This deliberate dimensionality reduction stabilizes model coefficients and geometric clustering separation.
+This deliberate dimensionality reduction stabilizes model coefficients and improves gradient convergence.
 
 ---
 
@@ -231,97 +228,51 @@ Evaluating Gini Impurity reduction across all trees identified the following pri
 
 ---
 
-## 5. Unsupervised Learning Methodology & Customer Segmentation
+## 5. Critical Analysis, Limitations & Ethical Discussion
 
-### 5.1 Motivation & Setup
-Supervised models require ground-truth labels. However, financial institutions frequently require unsupervised segmentation on unlabelled portfolios to detect natural risk strata, adjust lending terms, and flag anomalies. For this phase, `Credit_Score` was completely removed.
-
-### 5.2 Algorithm 1: K-Means Clustering (Centroid-Based Partitioning)
-K-Means partitions n observations into K clusters by minimizing Within-Cluster Sum of Squares (Inertia):
-$$J_{\text{KMeans}} = \sum_{k=1}^K \sum_{x \in C_k} ||x - \mu_k||^2$$
-
-#### Diagnostic Evaluation for Optimal K:
-- **Elbow Method (Inertia):** Evaluated across K in [2, 8]. WCSS exhibited a marked inflection ("elbow") at K=3 (Inertia = 80,370.0).
-- **Silhouette Coefficient Analysis:** K=2 achieved s=0.2744, and K=3 achieved s=0.1509. While K=2 yields mathematically tighter separation, K=3 provides substantially richer business utility by separating high-risk, prime, and mid-tier credit segments.
-
-![Elbow and Silhouette](figures/09_kmeans_elbow_silhouette.png)
-
-#### Cluster Persona Profiling:
-De-scaling cluster centroids to their original financial scales reveals three distinct customer personas:
-
-| Financial Attribute | Cluster 0: Chronic Overleveraged | Cluster 1: Prime Low-Risk | Cluster 2: Moderate Mid-Tier |
-| :--- | :---: | :---: | :---: |
-| **Cluster Size (n, %)** | **2,952 (34.0%)** | **3,511 (40.4%)** | **2,229 (25.6%)** |
-| **Annual Income ($)** | $32,659.60 | $71,765.84 | $44,836.34 |
-| **Lending Interest Rate (%)** | **24.60%** | **6.77%** | **15.34%** |
-| **Days Delayed Past Due Date**| **38.27 Days** | **10.68 Days** | **17.88 Days** |
-| **Tally of Delayed Payments** | **17.77 Events** | **6.86 Events** | **13.25 Events** |
-| **Active Credit Cards** | **7.51 Cards** | **4.27 Cards** | **5.26 Cards** |
-| **Applicant Age** | 31.48 Years | 37.14 Years | 33.49 Years |
-| **Ground-Truth Poor Credit %** | **95.60%** | **27.34%** | **62.94%** |
-| **Ground-Truth Good Credit %** | **4.40%** | **72.66%** | **37.06%** |
-
-> **Unsupervised Risk Alignment:** Completely blind to ground-truth labels, **Cluster 0 isolated 95.60% Poor credit instances** based entirely on high interest rates, chronic delays, and elevated card counts. Conversely, **Cluster 1 captured 72.66% Good credit applicants**, characterized by 2.2x higher earnings and low default rates.
-
-![PCA Scatter Plot](figures/10_kmeans_pca_scatter.png)
-
-### 5.3 Algorithm 2: DBSCAN (Density-Based Spatial Clustering)
-DBSCAN discovers clusters of arbitrary shapes and isolates outliers without forcing points into unnatural clusters:
-- **Parameter Selection via k-Distance Graph:** We plotted sorted k-nearest neighbor distances (k = 2 x dim = 40) and selected the distance knee at epsilon = 2.5 with `min_samples = 15`.
-- **Findings:** DBSCAN identified 1 core dense density cluster and isolated **301 instances (3.46%) as anomalous noise (-1)**. These noise points correspond to multi-attribute outliers (e.g., extreme delay-to-income ratios), confirming DBSCAN's effectiveness for automated fraud and anomaly screening.
-
-![DBSCAN k-Distance Graph](figures/11_dbscan_k_distance.png)
-
----
-
-## 6. Critical Analysis, Limitations & Ethical Discussion
-
-### 6.1 Algorithmic Trade-Offs (Interpretability vs Accuracy)
+### 5.1 Algorithmic Trade-Offs (Interpretability vs Accuracy)
 - **Logistic Regression:** Transparent white-box model. Each coefficient represents an interpretable log-odds multiplier (exp(theta_j)), directly satisfying statutory credit explanation requirements (e.g., Fair Credit Reporting Act). However, its linear hyperplane cannot model non-linear boundaries without manual basis expansion.
 - **Random Forest:** Achieves superior predictive performance (**PR-AUC 0.9267**), but acts as an ensemble of 100 decorrelated trees, creating explainability hurdles in adverse credit action notices.
 
-### 6.2 Data Limitations
+### 5.2 Data Limitations
 1. **Synthetic Benchmark Nature:** While the Kaggle benchmark effectively simulates retail credit distributions, real-world banking datasets exhibit more complex longitudinal dependencies.
 2. **Missingness in Hard Inquiries:** `Num_Credit_Inquiries` had 99.33% missing values, necessitating its removal. In production credit scoring, credit bureau hard inquiries provide valuable short-term credit-seeking signals.
 
-### 6.3 Ethical AI & Algorithmic Fairness in Credit Scoring
+### 5.3 Ethical AI & Algorithmic Fairness in Credit Scoring
 Automated credit decision systems risk perpetuating historical socio-economic disparities. Disparate impact can emerge through proxy variables (e.g., occupation categories or demographic correlations). To promote responsible AI, automated models must undergo rigorous fairness parity audits (Equal Opportunity and Demographic Parity) to prevent systemic discrimination.
 
 ---
 
-## 7. Author & Individual Project Contribution
+## 6. Author & Individual Project Contribution
 
-### 7.1 Submission Governance
+### 6.1 Submission Governance
 This project was conducted as an **authorized individual submission** for IT5022 by **Ginuka (Student ID: MS26922898)**.
 
-### 7.2 End-to-End Ownership Across Rubric Criteria
+### 6.2 End-to-End Ownership Across Rubric Criteria
 The author independently planned, implemented, validated, and documented all technical and academic components:
 - **Data Engineering & Noise Sanitization (Criterion 3):** Engineered `CreditDomainFeatureEngineer` to sanitize impossible ages, corrupt interest rates, sentinel investments, and categorical placeholders. Formulated leakage-free median/mode imputation inside `ColumnTransformer`.
 - **Statistical Hypothesis Testing (Criterion 1 & 2):** Designed comparative ANOVA F-tests demonstrating how sanitization unlocked statistical significance across all 10 continuous predictors (F = 0.01 -> 3,945.77), and conducted Chi-Square independence tests proving `Occupation` independence.
-- **Supervised Learning Implementation (Criteria 4 & 5):** Constructed 5-fold Stratified CV pipelines for Logistic Regression (evaluating L1 and L2 penalties) and Random Forest. Implemented out-of-fold threshold tuning (t=0.44) on training folds to boost high-risk default recall.
-- **Unsupervised Customer Segmentation (Criteria 4 & 5):** Formulated K-Means Elbow/Silhouette diagnostics (K=3), de-scaled centroids into financial personas (achieving 95.6% poor credit isolation in Cluster 0), and tuned DBSCAN (epsilon=2.5).
+- **Supervised Learning Implementation (Criteria 4 & 5):** Constructed 5-fold Stratified CV pipelines for Logistic Regression (evaluating L1 and L2 penalties) and Random Forest. Implemented out-of-fold threshold tuning (t = 0.44) on training folds to boost high-risk default recall.
 - **Academic Reporting & Documentation (Criteria 6 & 7):** Authored all chapters of this academic paper, synchronized every reported metric with executed notebook outputs, generated diagnostic figures, formatted the complete source code appendix, and prepared video demonstration materials.
 
 ---
 
-## 8. Conclusion & Future Work
-This investigation demonstrated the application of machine learning to financial credit risk. The Random Forest ensemble proved outstanding in predictive classification (**ROC-AUC 0.8948, PR-AUC 0.9267**), while K-Means clustering effectively uncovered behavioral financial personas without supervision. 
+## 7. Conclusion & Future Work
+This investigation demonstrated the rigorous application of supervised machine learning to financial credit risk scoring. The Random Forest ensemble proved outstanding in predictive classification (**ROC-AUC 0.8948, PR-AUC 0.9267**), while tuned Logistic Regression demonstrated the practical business efficacy of decision-threshold moving (boosting recall to **85.82%**).
 
-Future work should investigate **Cost-Sensitive Gradient Boosting (LightGBM/CatBoost)** and explore **Semi-Supervised Label Propagation** to capitalize on vast quantities of unlabelled banking transactions.
+Future work should investigate **Cost-Sensitive Gradient Boosting (LightGBM/CatBoost)** with asymmetric loss weighting to penalize loan default misclassifications directly during gradient descent.
 
 ---
 
-## 9. References
+## 8. References
 1. Breiman, L. (2001). "Random Forests." *Machine Learning*, 45(1), pp. 5–32.
 2. Hastie, T., Tibshirani, R., and Friedman, J. (2009). *The Elements of Statistical Learning: Data Mining, Inference, and Prediction*. 2nd ed. Springer.
-3. Ester, M., Kriegel, H.P., Sander, J., and Xu, X. (1996). "A density-based algorithm for discovering clusters in large spatial databases with noise." In *KDD-96 Proceedings*, pp. 226–231.
-4. Rousseeuw, P.J. (1987). "Silhouettes: a graphical aid to the interpretation and validation of cluster analysis." *Journal of Computational and Applied Mathematics*, 20, pp. 53–65.
-5. Hand, D.J. and Henley, W.E. (1997). "Statistical classification methods in consumer credit scoring: a review." *Journal of the Royal Statistical Society: Series A*, 160(3), pp. 523–541.
-6. Paris, R. (2022). "Credit Score Classification Dataset." *Kaggle Datasets*, CC0 Public Domain. Available at: https://www.kaggle.com/datasets/parisrohan/credit-score-classification.
+3. Hand, D.J. and Henley, W.E. (1997). "Statistical classification methods in consumer credit scoring: a review." *Journal of the Royal Statistical Society: Series A*, 160(3), pp. 523–541.
+4. Paris, R. (2022). "Credit Score Classification Dataset." *Kaggle Datasets*, CC0 Public Domain. Available at: https://www.kaggle.com/datasets/parisrohan/credit-score-classification.
 
 ---
 
-## 10. Appendix: Complete Source Code
+## 9. Appendix: Complete Source Code
 *(Formatted in full as text in accordance with assignment regulations; no screenshots).*
 
 ### Appendix A: `src/data_pipeline.py`
@@ -1199,136 +1150,4 @@ prob_dict = {
     'Random Forest': rf_prob
 }
 plot_roc_pr_comparison(prob_dict, y_test, save_path=os.path.join(figures_dir, '08_roc_pr_curves.png'))
-```
-
-### Appendix F: `notebooks/04_unsupervised_learning_clustering.ipynb`
-```python
-# ===== Code Cell 2 =====
-import sys
-import os
-import warnings
-warnings.filterwarnings('ignore')
-
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-from sklearn.cluster import KMeans, DBSCAN
-from sklearn.metrics import silhouette_score, adjusted_rand_score
-from sklearn.neighbors import NearestNeighbors
-from sklearn.decomposition import PCA
-
-sys.path.append(os.path.abspath(".."))
-from src.data_pipeline import CreditDomainFeatureEngineer, build_preprocessor, get_feature_lists
-from src.evaluation_helpers import plot_elbow_and_silhouette
-
-figures_dir = os.path.join("..", "reports", "figures")
-os.makedirs(figures_dir, exist_ok=True)
-
-print("Clustering modules imported successfully.")
-
-# ===== Code Cell 4 =====
-df = pd.read_csv(os.path.join("..", "dataset", "dataset.csv"))
-
-# Store true labels for external cross-tabulation validation later
-true_labels = (df['Credit_Score'] == 'Poor').astype(int)
-
-# Extract features without labels
-X_raw = df.drop(columns=['Credit_Score'])
-
-engineer = CreditDomainFeatureEngineer(drop_identifiers=True)
-X_eng = engineer.transform(X_raw)
-
-numeric_cols, categorical_cols = get_feature_lists(X_eng)
-preprocessor = build_preprocessor(numeric_cols, categorical_cols)
-
-X_scaled = preprocessor.fit_transform(X_eng)
-print(f"Scaled feature matrix shape: {X_scaled.shape}")
-
-# ===== Code Cell 6 =====
-k_range = range(2, 9)
-inertias = []
-sil_scores = []
-
-for k in k_range:
-    km = KMeans(n_clusters=k, init='k-means++', n_init=10, random_state=42)
-    labels = km.fit_predict(X_scaled)
-    inertias.append(km.inertia_)
-    # Sample for silhouette computation speed on 8692 rows
-    sil = silhouette_score(X_scaled, labels, sample_size=3000, random_state=42)
-    sil_scores.append(sil)
-    print(f"k = {k} | Inertia: {km.inertia_:,.1f} | Silhouette: {sil:.4f}")
-
-plot_elbow_and_silhouette(
-    k_range, inertias, sil_scores,
-    save_path=os.path.join(figures_dir, '09_kmeans_elbow_silhouette.png')
-)
-
-# ===== Code Cell 8 =====
-chosen_k = 3
-final_kmeans = KMeans(n_clusters=chosen_k, init='k-means++', n_init=10, random_state=42)
-kmeans_labels = final_kmeans.fit_predict(X_scaled)
-
-df_profile = X_eng[numeric_cols].copy()
-df_profile['KMeans_Cluster'] = kmeans_labels
-
-cluster_profiles = df_profile.groupby('KMeans_Cluster').mean()
-print("=== UN-SCALED CLUSTER MEANS (FINANCIAL PERSONAS) ===")
-display(cluster_profiles[['Annual_Income', 'Interest_Rate', 'Delay_from_due_date', 'Num_of_Delayed_Payment', 'Num_Credit_Card']].round(2))
-
-# ===== Code Cell 10 =====
-pca = PCA(n_components=2, random_state=42)
-X_pca = pca.fit_transform(X_scaled)
-
-plt.figure(figsize=(9, 6))
-scatter = plt.scatter(X_pca[:, 0], X_pca[:, 1], c=kmeans_labels, cmap='viridis', alpha=0.5, s=20)
-plt.title('K-Means Financial Segments (2D PCA Projection)', fontweight='bold')
-plt.xlabel(f'Principal Component 1 ({pca.explained_variance_ratio_[0]*100:.1f}% Variance)')
-plt.ylabel(f'Principal Component 2 ({pca.explained_variance_ratio_[1]*100:.1f}% Variance)')
-plt.colorbar(scatter, label='K-Means Cluster')
-plt.tight_layout()
-plt.savefig(os.path.join(figures_dir, '10_kmeans_pca_scatter.png'), dpi=300)
-plt.show()
-
-# ===== Code Cell 12 =====
-# k-distance graph for eps selection
-k_neighbors = 2 * X_scaled.shape[1]  # MinPts rule of thumb: 2 * dim
-nbrs = NearestNeighbors(n_neighbors=k_neighbors).fit(X_scaled)
-distances, _ = nbrs.kneighbors(X_scaled)
-sorted_distances = np.sort(distances[:, -1])
-
-plt.figure(figsize=(8, 4))
-plt.plot(sorted_distances, color='purple', lw=2)
-plt.axhline(y=2.5, color='r', linestyle='--', label='Selected Epsilon (eps = 2.5)')
-plt.title(f'{k_neighbors}-NN Distance Graph for DBSCAN Epsilon Selection', fontweight='bold')
-plt.xlabel('Data Points Sorted by Distance')
-plt.ylabel(f'Distance to {k_neighbors}-th Nearest Neighbor')
-plt.grid(True, linestyle=':')
-plt.legend(frameon=True)
-plt.tight_layout()
-plt.savefig(os.path.join(figures_dir, '11_dbscan_k_distance.png'), dpi=300)
-plt.show()
-
-# Fit DBSCAN with eps = 2.5, min_samples = 15
-dbscan = DBSCAN(eps=2.5, min_samples=15)
-dbscan_labels = dbscan.fit_predict(X_scaled)
-
-n_clusters_db = len(set(dbscan_labels)) - (1 if -1 in dbscan_labels else 0)
-n_noise = list(dbscan_labels).count(-1)
-print(f"DBSCAN Detected Clusters: {n_clusters_db}")
-print(f"DBSCAN Detected Noise / Outlier Points: {n_noise} ({n_noise/len(X_scaled)*100:.2f}%)")
-
-# ===== Code Cell 14 =====
-crosstab = pd.crosstab(
-    kmeans_labels, df['Credit_Score'],
-    rownames=['K-Means Cluster'], colnames=['Actual Credit Score'],
-    normalize='index'
-) * 100
-
-print("Percentage Distribution of Credit_Score within each K-Means Cluster:")
-display(crosstab.round(2))
-
-ari = adjusted_rand_score(true_labels, kmeans_labels)
-print(f"Adjusted Rand Index (ARI) between K-Means and Credit_Score: {ari:.4f}")
 ```
