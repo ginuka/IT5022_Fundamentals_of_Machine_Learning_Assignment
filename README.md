@@ -3,19 +3,19 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Scikit-Learn](https://img.shields.io/badge/Scikit--Learn-1.4%2B-orange.svg)](https://scikit-learn.org/)
-[![License: Academic](https://img.shields.io/badge/License-Academic%20Use%20Only-green.svg)](#)
+[![License: CC0 Public Domain](https://img.shields.io/badge/License-CC0%20Public%20Domain-green.svg)](https://creativecommons.org/publicdomain/zero/1.0/)
 
 ---
 
 ## 📌 Project Overview
-This repository contains the complete implementation of the **IT5022: Fundamentals of Machine Learning** MSc programming assignment. The project tackles a real-world financial risk problem: **automated credit risk evaluation and unlabelled customer segmentation** using a dataset of 8,692 retail banking customers across 19 financial and behavioral indicators.
+This repository contains the complete implementation of the **IT5022: Fundamentals of Machine Learning** MSc programming assignment. The project tackles a critical financial risk problem: **automated credit risk evaluation and unlabelled customer segmentation** using a dataset of 8,692 retail banking customers across 19 financial and behavioral indicators.
 
 In accordance with the module rubric, we implement:
 - **Two Distinct Supervised Learning Algorithms:**
-  1. *Parametric Baseline:* Regularized Logistic Regression (L1/L2 penalties, cost-sensitive class balancing, decision threshold optimization via PR curves).
-  2. *Non-linear Ensemble:* Random Forest Classifier (Grid/Randomized CV hyperparameter optimization, Gini impurity reduction, permutation feature importance).
+  1. *Parametric Baseline:* Regularized Logistic Regression (evaluating L1 and L2 penalties, out-of-fold decision-threshold tuning via `cross_val_predict`, PR curves, and probability calibration).
+  2. *Non-linear Ensemble:* Random Forest Classifier (GridSearchCV 5-fold cross-validation, Gini impurity reduction feature importance, generalization gap and overfitting diagnostics).
 - **Two Distinct Unsupervised Learning / Clustering Algorithms:**
-  1. *Centroid-based Partitioning:* K-Means Clustering with Within-Cluster Sum of Squares (Inertia/Elbow method), Silhouette analysis ($[-1, +1]$), and cluster persona profiling.
+  1. *Centroid-based Partitioning:* K-Means Clustering with Within-Cluster Sum of Squares (Inertia/Elbow method), Silhouette analysis, and de-scaled centroid persona profiling.
   2. *Density-based Spatial Clustering:* DBSCAN with $k$-distance $\epsilon$ optimization for financial anomaly/noise detection and dense risk cluster identification.
 
 ---
@@ -41,12 +41,14 @@ IT5022_Fundamentals_of_Machine_Learning_Assignment/
 │
 ├── reports/
 │   ├── figures/                 # Exported high-resolution figures for academic report
-│   └── IT5022_Credit_Risk_Report.pdf  # Final MSc academic report with source code appendix
+│   ├── IT5022_Credit_Risk_Report.md   # Final MSc academic report source with full code appendix
+│   └── IT5022_Credit_Risk_Report.pdf  # Compiled publication-grade PDF report
 │
-├── members.txt                  # Group member student IDs and emails
+├── members.txt                  # Student ID and submission governance details
 ├── submission.txt               # Dataset, GitHub, and YouTube video presentation links
-├── requirements.txt             # Environment dependencies
-├── ASSIGNMENT_IMPLEMENTATION_PLAN.md # Detailed MSc execution roadmap
+├── requirements.txt             # Pinned environment dependencies
+├── .gitignore                   # Excludes cache, virtual environments, and checkpoints
+├── ASSIGNMENT_IMPLEMENTATION_PLAN.md # Detailed execution roadmap
 └── README.md                    # Project documentation (this file)
 ```
 
@@ -72,32 +74,36 @@ pip install -r requirements.txt
 
 ---
 
-## 📊 Methodology & Key Findings
-1. **Data Preprocessing & Dimensionality Reduction (Zero Leakage):**
-   - 80/20 Stratified train-test split locked before any feature engineering.
-   - Domain imputation: missing `Monthly_Income` recovered via $\text{Annual\_Income} / 12$.
-   - Numerical extraction: regex-extracted clean integer years from `Credit_History_Age`.
-   - **Feature Pruning & Dimensionality Reduction (Rubric Criterion 3):** Pruned extreme collinear feature `Monthly_Income` ($r = 0.9865$ with `Annual_Income`), duplicate `Derived_Loan_Count` ($r = 1.0000$ with `Num_of_Loan`), and uninformative feature `Occupation` ($\chi^2$ $p = 0.347 \gg 0.05$), reducing feature space by 46% from 39 to 21 high-signal dimensions.
-   - Outlier mitigation and standardization using `StandardScaler` fitted strictly on training folds.
-2. **Supervised Classification:**
-   - Evaluated under class imbalance (59.7% Poor vs 40.3% Good).
-   - Tuned decision thresholds using Precision-Recall trade-offs to minimize high-cost False Negatives (unidentified high-risk borrowers).
-3. **Unsupervised Customer Profiling:**
-   - Evaluated clusters using the Elbow Method and Silhouette coefficients.
-   - Discovered distinct behavioral segments: *Prime Savers*, *Overleveraged Revolvers*, and *Credit Inactives*.
+## 📊 Dataset Provenance & Methodology
+
+### Dataset Provenance
+- **Primary Source:** Kaggle Benchmark *"Credit Score Classification"* by Rohan Paris (`https://www.kaggle.com/datasets/parisrohan/credit-score-classification`, CC0: Public Domain).
+- **Derivation:** Formulated as an authentic binary credit scoring problem by deduplicating multi-month records to 8,692 unique retail customers across 19 attributes, focusing on binary credit health (`Poor` = default hazard [59.65%], `Good` = creditworthy [40.35%]).
+
+### Key Methodological Highlights
+1. **Data Sanitization & Preprocessing (Zero Leakage):**
+   - 80/20 Stratified train-test split locked before any transformer fitting.
+   - Domain sanitization converts artificial 4-digit corruptions (ages of $-500$ and $8,697$, interest rates up to $5,774\%$, loans of $-100$, sentinel investments of $10,000$, and string placeholders `'_______'`, `'!@9#%8'`, `'_'`, `'NM'`) to `NaN`, cleanly resolved via median and mode imputation inside the Scikit-Learn `ColumnTransformer`.
+   - ANOVA hypothesis testing demonstrates that domain sanitization unlocks decisive statistical significance across all 10 continuous predictors, with `Interest_Rate` rising from $F = 0.01$ ($p = 0.90$) to $F = 3,945.77$ ($p < 10^{-100}$).
+   - **Dimensionality Reduction (Rubric Criterion 3):** Pruned extreme collinear feature `Monthly_Income` ($r > 0.93$), duplicate `Derived_Loan_Count` ($r = 1.0000$), and statistically independent feature `Occupation` ($\chi^2 = 16.54, p = 0.347 \gg 0.05$), reducing the feature matrix to 20 clean, standardized dimensions.
+2. **Supervised Classification Benchmark:**
+   - Evaluated under moderate class imbalance (59.65% Poor vs 40.35% Good).
+   - Tuned decision thresholds on out-of-fold training probabilities via `cross_val_predict` ($t = 0.44$), increasing Recall to **85.82%** to minimize high-cost default write-offs.
+   - Tuned Random Forest achieved superior performance across all dimensions: **Accuracy 82.12%**, **F1 0.8449**, **MCC 0.6364**, **ROC-AUC 0.8948**, and **PR-AUC 0.9267**, with a tight generalization gap (89.69% train vs 82.12% test) demonstrating effective tree regularization.
+3. **Unsupervised Customer Personas:**
+   - K-Means ($K = 3$) uncovered natural financial segments:
+     - **Cluster 0: Chronic Overleveraged Defaulters ($n=2,952$):** High interest rates ($24.6\%$), chronic payment delays ($38.3$ days), capturing **95.60% Poor credit instances** without labels.
+     - **Cluster 1: Prime Low-Risk Borrowers ($n=3,511$):** High income ($71.8\text{k}$), low interest ($6.8\%$), capturing **72.66% Good credit instances**.
+     - **Cluster 2: Moderate-Income Mid-Tier Borrowers ($n=2,229$):** Balanced credit usage ($62.94\%$ Poor credit).
+   - DBSCAN ($\epsilon = 2.5, \text{min\_samples} = 15$) isolated 301 records (3.46%) as multi-dimensional anomaly noise.
 
 ---
 
 ## 👤 Author & Contribution (Individual Submission)
 * **Ginuka (Student ID: MS26922898 | Email: ms26922898@my.sliit.lk):**
-  - **Data Engineering:** Ingestion of raw dataset, domain-specific deterministic imputation ($\text{Monthly\_Income} = \text{Annual\_Income} / 12$), regex extraction of credit history years, and multi-label loan parsing.
-  - **Statistical Exploratory Audits:** Assessment of missing data mechanisms, IQR outlier boundaries, ANOVA F-tests, Chi-square independence tests, and correlation analysis.
+  - **Data Engineering:** Ingestion of raw dataset, domain-specific sanitization transformer, regex extraction of credit history years, and multi-label loan parsing.
+  - **Statistical Exploratory Audits:** Comparative ANOVA F-tests, Chi-square independence tests, and correlation analysis.
   - **Leakage-Safe Preprocessing Pipeline:** Construction of modular Scikit-Learn transformers and `ColumnTransformer` fitted strictly on training folds.
-  - **Supervised Classification:** Implementation and 5-fold cross-validation of Model 1 (Regularized Logistic Regression with threshold tuning) and Model 2 (Tuned Random Forest Ensemble with Gini feature importances).
+  - **Supervised Classification:** Implementation and 5-fold cross-validation of Model 1 (Regularized Logistic Regression with out-of-fold threshold tuning) and Model 2 (Tuned Random Forest Ensemble with Gini feature importances).
   - **Unsupervised Segmentation:** Execution of K-Means clustering with Elbow WCSS and Silhouette analysis ($K=3$), de-scaled centroid persona profiling, and DBSCAN density anomaly detection.
-  - **Evaluation & Reporting:** Construction of comprehensive metric evaluation framework (PR-AUC, ROC-AUC, MCC, Brier score, Confusion Matrices), final MSc academic report, and code appendix.
-
----
-
-## 📄 License & Academic Integrity
-This repository is submitted for the Master of Science in Information Technology (IT5022: Fundamentals of Machine Learning). All materials adhere strictly to university academic integrity and plagiarism guidelines.
+  - **Evaluation & Reporting:** Construction of comprehensive metric evaluation framework (PR-AUC, ROC-AUC, MCC, Brier score, Confusion Matrices), final MSc academic report PDF, and code appendix.
