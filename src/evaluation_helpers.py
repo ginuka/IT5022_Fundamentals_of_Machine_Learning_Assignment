@@ -1,8 +1,8 @@
 """
 src/evaluation_helpers.py
 =========================
-Evaluation metrics, statistical visualizations, and diagnostic curve generators
-for Supervised and Unsupervised Learning models in IT5022 Assignment.
+Statistical evaluation metrics, diagnostic curves, and visualization
+helpers for supervised classification and unsupervised clustering.
 """
 
 import os
@@ -19,7 +19,25 @@ from sklearn.metrics import (
 
 def evaluate_classifier(name, y_true, y_pred, y_prob=None):
     """
-    Computes a comprehensive suite of binary classification metrics.
+    Computes a standard evaluation suite for binary classification:
+    Accuracy, Precision, Recall (Sensitivity), Specificity, F1-Score,
+    Matthews Correlation Coefficient (MCC), ROC-AUC, PR-AUC, and Brier Score.
+
+    Parameters
+    ----------
+    name : str
+        Model descriptor for tabular reporting.
+    y_true : array-like
+        Ground-truth binary labels (1=Positive/Poor, 0=Negative/Good).
+    y_pred : array-like
+        Predicted binary class assignments.
+    y_prob : array-like, optional
+        Predicted posterior probability of positive class.
+
+    Returns
+    -------
+    dict
+        Dictionary of computed performance metrics.
     """
     acc = accuracy_score(y_true, y_pred)
     prec = precision_score(y_true, y_pred, zero_division=0)
@@ -55,7 +73,7 @@ def evaluate_classifier(name, y_true, y_pred, y_prob=None):
 
 def plot_confusion_matrices(models_dict, X_test, y_test, save_path=None):
     """
-    Plots side-by-side normalized confusion matrices for comparative models.
+    Plots normalized confusion matrices for comparative classification models.
     """
     n_models = len(models_dict)
     fig, axes = plt.subplots(1, n_models, figsize=(6 * n_models, 5))
@@ -83,11 +101,11 @@ def plot_confusion_matrices(models_dict, X_test, y_test, save_path=None):
 
 def plot_roc_pr_comparison(models_prob_dict, y_test, save_path=None):
     """
-    Plots ROC Curves and Precision-Recall Curves side-by-side for multiple models.
+    Plots comparative ROC and Precision-Recall diagnostic curves against theoretical baselines.
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
 
-    # 1. ROC Curves
+    # ROC discrimination curves
     for name, y_prob in models_prob_dict.items():
         fpr, tpr, _ = roc_curve(y_test, y_prob)
         roc_auc = roc_auc_score(y_test, y_prob)
@@ -100,7 +118,7 @@ def plot_roc_pr_comparison(models_prob_dict, y_test, save_path=None):
     ax1.legend(loc='lower right', frameon=True)
     ax1.grid(True, linestyle=':', alpha=0.6)
 
-    # 2. Precision-Recall Curves
+    # Precision-Recall curves (prevalence benchmark)
     baseline_pr = np.mean(y_test)
     for name, y_prob in models_prob_dict.items():
         precision, recall, _ = precision_recall_curve(y_test, y_prob)
@@ -124,7 +142,7 @@ def plot_roc_pr_comparison(models_prob_dict, y_test, save_path=None):
 
 def plot_elbow_and_silhouette(k_range, inertias, sil_scores, save_path=None):
     """
-    Plots the Elbow Method (Inertia) and Silhouette Score curves for clustering.
+    Plots Within-Cluster Sum of Squares (Inertia/Elbow) and mean Silhouette scores across cluster candidate counts.
     """
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
@@ -145,3 +163,4 @@ def plot_elbow_and_silhouette(k_range, inertias, sil_scores, save_path=None):
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
     plt.show()
+
